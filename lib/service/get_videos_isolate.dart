@@ -5,50 +5,52 @@ import 'package:jaar_player/core/build_context.dart';
 import 'package:jaar_player/core/constants.dart';
 import 'package:jaar_player/features/player/bloc/preload_bloc.dart';
 import 'package:jaar_player/service/api_service.dart';
+import 'package:jaar_player/service/injection.dart';
+import 'package:jaar_player/service/navigation_service.dart';
 
-/// Isolate to fetch videos in the background so that the video experience is not disturbed.
+/// Isolate to fetch videos in the background so that the video
+/// experience is not disturbed.
 /// Without isolate, the video will be paused whenever there is an API call
 /// because the main thread will be busy fetching new video URLs.
 ///
 /// https://blog.codemagic.io/understanding-flutter-isolates/
 Future<void> createIsolate(int index) async {
   // Set loading to true
-  BlocProvider.of<PreloadBloc>(context, listen: false)
-      .add(PreloadEvent.setLoading());
+  BlocProvider.of<PreloadBloc>(context).add(const PreloadEvent.setLoading());
 
-  ReceivePort mainReceivePort = ReceivePort();
+  final mainReceivePort = ReceivePort();
 
-  Isolate.spawn<SendPort>(getVideosTask, mainReceivePort.sendPort);
+  await Isolate.spawn<SendPort>(getVideosTask, mainReceivePort.sendPort);
 
-  SendPort isolateSendPort = await mainReceivePort.first as SendPort;
+  final isolateSendPort = await mainReceivePort.first as SendPort;
 
-  ReceivePort isolateResponseReceivePort = ReceivePort();
+  final isolateResponseReceivePort = ReceivePort();
 
   isolateSendPort.send([index, isolateResponseReceivePort.sendPort]);
 
   final isolateResponse = await isolateResponseReceivePort.first;
-  final _urls = isolateResponse as List<String>;
+  final urls = isolateResponse as List<String>;
 
   // Update new urls
-  BlocProvider.of<PreloadBloc>(context, listen: false)
-      .add(PreloadEvent.updateUrls(_urls));
+  BlocProvider.of<PreloadBloc>(
+    getIt<NavigationService>().navigationKey.currentContext!,
+  ).add(PreloadEvent.updateUrls(urls));
 }
 
-void getVideosTask(SendPort mySendPort) async {
-  ReceivePort isolateReceivePort = ReceivePort();
+Future<void> getVideosTask(SendPort mySendPort) async {
+  final isolateReceivePort = ReceivePort();
 
   mySendPort.send(isolateReceivePort.sendPort);
 
-  await for (var message in isolateReceivePort) {
+  await for (final message in isolateReceivePort) {
     if (message is List) {
-      final int index = message[0] as int;
+      final index = message[0] as int;
 
-      final SendPort isolateResponseSendPort = message[1] as SendPort;
+      final isolateResponseSendPort = message[1] as SendPort;
 
-      final List<String> _urls =
-          await ApiService.getVideos(id: index + kPreloadLimit);
+      final urls = await ApiService.getVideos(id: index + kPreloadLimit);
 
-      isolateResponseSendPort.send(_urls);
+      isolateResponseSendPort.send(urls);
     }
   }
 }

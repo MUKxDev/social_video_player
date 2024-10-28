@@ -29,7 +29,7 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
     Emitter<PreloadState> emit,
   ) async {
     /// Fetch first 5 videos from api
-    final List<String> urls = await ApiService.getVideos();
+    final urls = await ApiService.getVideos();
     state.urls.addAll(urls);
 
     /// Initialize 1st video
@@ -45,9 +45,11 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
   }
 
   FutureOr<void> _onVideoIndexChanged(
-      _OnVideoIndexChanged event, Emitter<PreloadState> emit) {
+    _OnVideoIndexChanged event,
+    Emitter<PreloadState> emit,
+  ) {
     /// Condition to fetch new videos
-    final bool shouldFetch = (event.index + kPreloadLimit) % kNextLimit == 0 &&
+    final shouldFetch = (event.index + kPreloadLimit) % kNextLimit == 0 &&
         state.urls.length == event.index + kPreloadLimit;
 
     if (shouldFetch) {
@@ -115,10 +117,11 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
   void _playControllerAtIndex(int index) {
     if (state.urls.length > index && index >= 0) {
       /// Get controller at [index]
-      final controller = state.controllers[index]!;
+      // final controller = state.controllers[index]!.play();
 
       /// Play controller
-      controller.play();
+      state.controllers[index]!.play();
+      // controller.play();
 
       log('🚀🚀🚀 PLAYING $index');
     }
@@ -127,13 +130,9 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
   void _stopControllerAtIndex(int index) {
     if (state.urls.length > index && index >= 0) {
       /// Get controller at [index]
-      final VideoPlayerController controller = state.controllers[index]!;
-
-      /// Pause
-      controller.pause();
-
-      /// Reset postiton to beginning
-      controller.seekTo(const Duration());
+      state.controllers[index]!
+        ..pause()
+        ..seekTo(Duration.zero);
 
       log('🚀🚀🚀 STOPPED $index');
     }
@@ -142,7 +141,7 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
   void _disposeControllerAtIndex(int index) {
     if (state.urls.length > index && index >= 0) {
       /// Get controller at [index]
-      final VideoPlayerController? controller = state.controllers[index];
+      final controller = state.controllers[index];
 
       /// Dispose controller
       controller?.dispose();
