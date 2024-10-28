@@ -100,14 +100,13 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
 
       /// Create new controller
       final controller = VideoPlayerController.networkUrl(uri);
-
-      log(controller.dataSource);
+      await controller.setLooping(true);
 
       /// Add to [controllers] list
       state.controllers[index] = controller;
 
       /// Initialize
-      await state.controllers[index]?.initialize();
+      await controller.initialize();
 
       log('🚀🚀🚀 INITIALIZED $index');
     }
