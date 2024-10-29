@@ -16,21 +16,33 @@ class _VideoPageState extends State<VideoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: BlocBuilder<PreloadBloc, PreloadState>(
-        builder: (context, state) {
-          return PageView.builder(
-            controller: controller,
-            itemCount: state.urls.length,
-            scrollDirection: Axis.vertical,
-            onPageChanged: (index) => context.read<PreloadBloc>()
-              ..add(PreloadEvent.onVideoIndexChanged(index)),
-            itemBuilder: (context, index) {
-              // Is at end and isLoading
-              final isLoading =
-                  state.isLoading && index == state.urls.length - 1;
+    return BlocBuilder<PreloadBloc, PreloadState>(
+      builder: (context, state) {
+        return PageView.builder(
+          controller: controller,
+          itemCount: state.urls.length,
+          scrollDirection: Axis.vertical,
+          onPageChanged: (index) => context.read<PreloadBloc>()
+            ..add(PreloadEvent.onVideoIndexChanged(index)),
+          itemBuilder: (context, index) {
+            // Is at end and isLoading
+            final isLoading = state.isLoading && index == state.urls.length - 1;
 
-              return PageView(
+            return AnimatedCrossFade(
+              alignment: Alignment.center,
+              sizeCurve: Curves.decelerate,
+              duration: const Duration(milliseconds: 400),
+              firstChild: const Padding(
+                padding: EdgeInsets.all(10),
+                child: CupertinoActivityIndicator(
+                  color: Colors.white,
+                  radius: 8,
+                ),
+              ),
+              secondChild: PageView(
+                onPageChanged: (i) {
+                  state.controllers[index]?.pause();
+                },
                 children: [
                   SizedBox.expand(
                     child: state.focusedIndex == index
@@ -67,12 +79,16 @@ class _VideoPageState extends State<VideoPage> {
                     ),
                   ),
                 ],
-              );
-              // : const SizedBox();
-            },
-          );
-        },
-      ),
+              ),
+              crossFadeState: (isLoading && state.focusedIndex == 0)
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+            );
+
+            // : const SizedBox();
+          },
+        );
+      },
     );
   }
 }

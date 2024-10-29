@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jaar_player/features/player/bloc/preload_bloc.dart';
-import 'package:jaar_player/features/player/video_page.dart';
+import 'package:jaar_player/features/player/presentation/feed_page.dart';
+
 import 'package:jaar_player/l10n/l10n.dart';
 import 'package:jaar_player/service/injection.dart';
 import 'package:jaar_player/service/navigation_service.dart';
@@ -23,7 +24,7 @@ class App extends StatelessWidget {
         ),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const VideoPage(),
+        home: const FeedPage(),
         navigatorKey: getIt<NavigationService>().navigationKey,
       ),
     );

@@ -28,6 +28,8 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
     _GetVideosFromApi event,
     Emitter<PreloadState> emit,
   ) async {
+    emit(state.copyWith(isLoading: true));
+
     /// Fetch first 5 videos from api
     final urls = await ApiService.getVideos();
     state.urls.addAll(urls);
@@ -41,7 +43,8 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
     /// Initialize 2nd video
     await _initializeControllerAtIndex(1);
 
-    emit(state.copyWith(reloadCounter: state.reloadCounter + 1));
+    emit(state.copyWith(
+        reloadCounter: state.reloadCounter + 1, isLoading: false));
   }
 
   FutureOr<void> _onVideoIndexChanged(
@@ -66,7 +69,20 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
     emit(state.copyWith(focusedIndex: event.index));
   }
 
-  FutureOr<void> _onUpdateUrls(_UpdateUrls event, Emitter<PreloadState> emit) {}
+  FutureOr<void> _onUpdateUrls(_UpdateUrls event, Emitter<PreloadState> emit) {
+    state.urls.addAll(event.urls);
+
+    _initializeControllerAtIndex(state.focusedIndex + 1);
+
+    emit(
+      state.copyWith(
+        reloadCounter: state.reloadCounter + 1,
+        isLoading: false,
+      ),
+    );
+
+    log('🚀🚀🚀 NEW VIDEOS ADDED');
+  }
 
   void _playNext(int index) {
     /// Stop [index - 1] controller
